@@ -21,7 +21,23 @@ jobs:
           pip install buildozer cython==0.29.36 virtualenv
 
       - name: Build APK
-        run: buildozer -v android debug
+        run: |
+          set -o pipefail
+          buildozer -v android debug 2>&1 | tee build.log
+
+      - name: Tampilkan penyebab error
+        if: failure()
+        run: |
+          echo "=== BARIS ERROR ==="
+          grep -n -iE "error|failed|exception|not found|no such" build.log | grep -v -iE "performance hint|Exception check|warning|deprecated|noexcept|Werror" | tail -30
+          echo "=== 60 BARIS TERAKHIR ==="
+          tail -n 60 build.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log
+          path: build.log
 
       - uses: actions/upload-artifact@v4
         with:
